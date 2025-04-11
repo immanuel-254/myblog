@@ -1,0 +1,10 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    queries: "/queries"
+    schema: "/supabase/migrations"
+    gen:
+      go:
+        package: "models"
+        out: "models"
+        emit_json_tags: true
