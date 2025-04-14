@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"time"
@@ -38,7 +39,11 @@ func Post(data map[string]string, route string) map[string]string {
 	if err != nil {
 		return map[string]string{"error": err.Error()}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close response body: %v", err)
+		}
+	}()
 
 	// Read and display the response
 	body, err := io.ReadAll(resp.Body)
@@ -47,6 +52,14 @@ func Post(data map[string]string, route string) map[string]string {
 	}
 
 	return map[string]string{"status": fmt.Sprint(resp.StatusCode), "body": string(body)}
+}
+
+func ConvertMap(m map[string]string) map[string]any {
+	result := make(map[string]any)
+	for key, value := range m {
+		result[key] = value
+	}
+	return result
 }
 
 func Signup(email, password string) map[string]string {
@@ -85,7 +98,11 @@ func CurrentUser(userToken string) map[string]string {
 	if err != nil {
 		return map[string]string{"error": err.Error()}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close response body: %v", err)
+		}
+	}()
 
 	// Read and display the response
 	body, err := io.ReadAll(resp.Body)
@@ -105,7 +122,7 @@ func ResetPassword(email string) map[string]string {
 	return result
 }
 
-func Logout(email, userToken string) map[string]string {
+func Logout(userToken string) map[string]string {
 	// Create the POST request
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/%s", url, "/auth/v1/logout"), nil)
 	if err != nil {
@@ -121,7 +138,11 @@ func Logout(email, userToken string) map[string]string {
 	if err != nil {
 		return map[string]string{"error": err.Error()}
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close response body: %v", err)
+		}
+	}()
 
 	return map[string]string{"status": fmt.Sprint(resp.StatusCode)}
 }

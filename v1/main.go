@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"log"
 	"os"
 
 	_ "github.com/joho/godotenv/autoload"
@@ -16,9 +17,13 @@ func main() {
 	db, err := sql.Open("postgres", psqlconn)
 
 	if err != nil {
-		panic(err)
+		log.Printf("db connection: %v", err)
 	}
 
 	// close database
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("close response body: %v", err)
+		}
+	}()
 }
