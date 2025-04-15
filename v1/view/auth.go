@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"myblog/auth"
 	"net/http"
+	"strconv"
 )
 
 func SignupView(w http.ResponseWriter, r *http.Request) {
@@ -110,6 +111,41 @@ func LoginView(w http.ResponseWriter, r *http.Request) {
 }
 
 func LogoutView(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "auth")
+	if err != nil {
+		SendData(http.StatusInternalServerError, map[string]string{"error": err.Error()}, w, r)
+		return
+	}
+
+	tokenresponse, ok := session.Values["auth"].(auth.TokenResponse)
+	if !ok {
+		SendData(http.StatusSeeOther, nil, w, r)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		logoutresponse := auth.Logout(tokenresponse.AccessToken)
+		if logoutresponse["status"] == "" {
+			SendData(http.StatusInternalServerError, map[string]string{"error": "logout request did not go through"}, w, r)
+			return
+		}
+		status, err := strconv.Atoi(logoutresponse["status"])
+		if err != nil {
+			SendData(http.StatusInternalServerError, map[string]string{"error": err.Error()}, w, r)
+			return
+		}
+		if status != http.StatusOK {
+			SendData(http.StatusInternalServerError, map[string]string{"error": "failed to logout"}, w, r)
+			return
+		}
+
+		session.Values["auth"] = nil
+		err = session.Save(r, w)
+		if err != nil {
+			SendData(http.StatusInternalServerError, map[string]string{"error": err.Error()}, w, r)
+			return
+		}
+	}
 
 }
 
