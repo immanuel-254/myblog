@@ -54,6 +54,41 @@ func Post(data map[string]string, route string) map[string]string {
 	return map[string]string{"status": fmt.Sprint(resp.StatusCode), "body": string(body)}
 }
 
+func Put(data map[string]string, route string) map[string]string {
+	// Convert struct to JSON
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return map[string]string{"error": err.Error()}
+	}
+
+	// Create the POST request
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/%s", url, route), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return map[string]string{"error": err.Error()}
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("apikey", key)
+
+	// Send the POST request
+	resp, err := client.Do(req)
+	if err != nil {
+		return map[string]string{"error": err.Error()}
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("close response body: %v", err)
+		}
+	}()
+
+	// Read and display the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return map[string]string{"error": err.Error()}
+	}
+
+	return map[string]string{"status": fmt.Sprint(resp.StatusCode), "body": string(body)}
+}
+
 func ConvertMap(m map[string]string) map[string]any {
 	result := make(map[string]any)
 	for key, value := range m {
@@ -117,7 +152,7 @@ func ResetPassword(email string) map[string]string {
 	data := map[string]string{
 		"email": email,
 	}
-	result := Post(data, "/auth/v1/recover")
+	result := Put(data, "/auth/v1/recover")
 
 	return result
 }
