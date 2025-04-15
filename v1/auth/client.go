@@ -97,12 +97,19 @@ func ConvertMap(m map[string]string) map[string]any {
 	return result
 }
 
-func Signup(email, password string) map[string]string {
+func Signup(email, password, email_redirect_to string) map[string]string {
 	data := map[string]string{
 		"email":    email,
 		"password": password,
+		"options":  fmt.Sprintf(`{"email_redirect_to":"%s"}`, email_redirect_to),
 	}
 	result := Post(data, "/auth/v1/signup")
+
+	return result
+}
+
+func ActivateEmail(data map[string]string) map[string]string {
+	result := Post(nil, fmt.Sprintf("/auth/v1/verify?token=%s&type=email&redirect_to=http://localhost:3000/success/?", data["token"]))
 
 	return result
 }

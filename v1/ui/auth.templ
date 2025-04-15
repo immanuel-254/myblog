@@ -1,0 +1,811 @@
+package ui
+
+import "strconv"
+import "fmt"
+import "time"
+
+func reverse(slice []map[string]any) {
+    length := len(slice)
+    for i := 0; i < length/2; i++ {
+        slice[i], slice[length-1-i] = slice[length-1-i], slice[i]
+    }
+}
+
+templ Base(Title string, Body templ.Component) {
+    <!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{Title}</title>
+    <link rel="stylesheet" href="/styles.css">
+    <link rel="stylesheet" href="/quill.css">
+    <link rel="icon" type="image/jpg" href="/CHRISTVS.jpg">
+  </head>
+  <body class="bg-white dark:bg-black font-mono">
+    <script src="/script.js"></script>
+    @Body
+  </body>
+</html>
+}
+
+templ Navbar(current_user, current_profile map[string]any) {
+  <nav class="border-b border-black">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex h-16 items-center justify-between">
+              <!-- Left Section: Text Input -->
+              <div class="flex items-center">
+               <a href="/" class="text-2xl">Immanu3l</a>
+              </div>
+              <!-- Right Section: Save Button -->
+              <!-- Right Section: Save Button and Dropdown -->
+              <div class="flex items-center space-x-4">
+                if current_user != nil {
+                  if current_user["is_admin"].(bool) {
+                    <a href="/profile-list">Profiles</a>
+                  }
+                }
+                if current_user != nil {
+                  if current_user["is_staff"].(bool) {
+                    <a href="/dashboard">DashBoard</a>
+                  }
+                }
+                if current_user != nil {
+                <!-- Dropdown -->
+                <div class="group relative">
+                  <p class="py-2 cursor-pointer hover:text-gray-800 ">Settings</p>
+                  <!-- Dropdown Menu -->
+                  <div class="invisible absolute right-0 mt-2 w-48 rounded-md border border-gray-200 bg-white opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100">
+                    if current_profile != nil {
+                      if current_profile["user_id"].(string) != "0" {
+                        <a href={ templ.SafeURL(fmt.Sprintf("/profile/%s", current_profile["user_id"].(string))) } class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                      } else {
+                        <a href="/profile-create" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Create Profile</a>
+                      }
+                    } else {
+                      <a href="/profile-create" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Create Profile</a>
+                    }
+                    <a href="/change-password-request" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Change Password</a>
+                    <a href="/logout" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Logout</a>
+                    <a href="/delete-user-request" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Delete User</a>
+                  </div>
+                </div>
+                } else {
+                  // <a href="/signup">signup</a>
+                  // <a href="/login">login</a>
+                }
+              </div>
+            </div>
+          </div>
+        </nav>
+}
+
+templ Signup(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Sign Up
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your email address and password to create a user account
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+          if alert != nil {
+            if alert["password"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["password"] }</p>
+            }
+            if alert["email"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["email"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="email">Email </label>
+          <input type="email" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="email" name="email" placeholder="Email" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="password">Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="password" name="password" placeholder="Password" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="password">Confirm Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required/>
+        </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ProfileCreate(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Create Profile
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your username and bio
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+          if alert != nil {
+            if alert["username"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["username"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="username">Username</label>
+          <input type="text" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="username" name="username" placeholder="Username" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="bio">Bio</label>
+          <textarea class="flex w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="bio" name="bio" placeholder="bio"></textarea>
+          </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ Login(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Login
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your email address and password to login
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+        if alert != nil {
+            if alert["credentials"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["credentials"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="email">Email </label>
+          <input type="email" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="email" name="email" placeholder="Email" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="password">Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="password" name="password" placeholder="Password" required/>
+        </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+        <br/>
+        <a href="/reset-password-request">Forgot password?</a>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ Logout() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Logout
+      </div>
+      
+      <div class="text-sm text-gray-600 text-center">
+        Press Submit to Logout or <a href="/" class="text-black">Go Home?</a>
+      </div></div>
+
+      <form method="post">
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ActivateEmailSent() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Check Your Email!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>An Email with a link to activate your user account has been sent to your inbox.</p>
+        <p>If email is not present in the inbox, check your spam folder.</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ SuccessActivateEmail() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Success!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>Email has been verified and user account has been activated you can now <a href="/login">Login</a></p>
+      </div>
+    </div>
+  </div>
+}
+
+templ UserProfileRead(current_profile, current_user, user, profile map[string]any) {
+  @Navbar(current_user, current_profile)
+  <div class="flex items-center justify-center my-3">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex justify-center space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center inline-flex items-center py-2">
+        if current_profile["user_id"].(string) != profile["user_id"].(string) {
+          Profile
+        } else {
+          Profile<a href={ templ.SafeURL(fmt.Sprintf("/profile/edit/%s", profile["user_id"].(string))) }><img class="mx-2" src="/pen-line.svg" alt="pen-line"></a>
+        }
+      </div>
+      </div>
+      
+      <div class="p-3 pt-0">
+        <div class="grid grid-cols-2 text-center">
+        <div><p>{ profile["username"].(string) }</p></div>
+        <div><p>{ user["created_at"].(string) }</p></div>
+      </div>
+      <hr class="border border-black mt-2"/>
+      if profile["bio"].(string) == "" {
+        <div class="p-3 mt-2">This guy doesn't have a bio....</div>
+      }
+      <div class="p-3 mt-2">{ profile["bio"].(string) }</div>
+      </div>
+    </div>
+  </div>
+}
+
+func ChartData(listData []map[string]any) map[string]int {
+	var chartdata = make(map[string]int)
+  
+	months := []string{
+	  time.January.String(),
+	  time.February.String(),
+	  time.March.String(),
+	  time.April.String(),
+	  time.May.String(),
+	  time.June.String(),
+	  time.July.String(),
+	  time.August.String(),
+	  time.September.String(),
+	  time.October.String(),
+	  time.November.String(),
+	  time.December.String(),
+	}
+  
+	for _, month := range months {
+	  chartdata[month] = 0
+	}
+  
+  if listData != nil {
+    for _, data := range listData {
+      joinedStr := data["created_at"].(string)
+      joined, _ := time.Parse("02 January 2006", joinedStr)
+
+      if joined.Year() == time.Now().Year() {
+        for _, month := range months {
+          if joined.Month().String() == month {
+            chartdata[month] += 1 
+          }
+        }
+      }
+    }}
+  
+	return chartdata
+}
+
+func TodayCount(listData []map[string]any) int {
+  count := 0  
+  for _, data := range listData {
+	  joined := data["created_at"].(string)
+
+    if joined == time.Now().Format("02 January 2006") {
+      count += 1
+    }
+	}
+
+  return count
+}
+
+func MonthCount(month string, listData []map[string]any) int {
+  count := 0  
+  for _, data := range listData {
+	  joinedStr := data["created_at"].(string)
+	  joined, _ := time.Parse("02 January 2006", joinedStr)
+
+    if joined.Month().String() == month {
+      count += 1
+    }
+	}
+  return count
+}
+
+func YearCount(year int, listData []map[string]any) int {
+  count := 0  
+  for _, data := range listData {
+	  joinedStr := data["created_at"].(string)
+	  joined, _ := time.Parse("02 January 2006", joinedStr)
+
+    if joined.Year() == year {
+      count += 1
+    }
+	}
+  return count
+}
+
+templ UserProfileList(current_profile, current_user map[string]any, profiles []map[string]any) {
+  {{ reverse(profiles) }}
+  @Navbar(current_user, current_profile)
+      <div class="grid grid-cols-3 gap-2 m-3">
+        <div class="grid grid-cols-2 text-center p-1 mt-2 rounded-md border border-black">
+          <div><p>Today</p></div>
+          <div><p>{ fmt.Sprintf("%v", TodayCount(profiles)) }</p></div>
+        </div>  
+        <div class="grid grid-cols-2 text-center p-1 mt-2 rounded-md border border-black">
+          <div><p>{ time.Now().Month().String() }</p></div>
+          <div><p>{ fmt.Sprintf("%v", MonthCount(time.Now().Month().String(), profiles)) }</p></div>
+        </div>     
+        <div class="grid grid-cols-2 text-center p-1 mt-2 rounded-md border border-black">
+          <div><p>{ fmt.Sprintf("%v", time.Now().Year()) }</p></div>
+          <div><p>{ fmt.Sprintf("%v", YearCount(time.Now().Year(), profiles)) }</p></div>
+        </div>     
+      </div>
+
+  <div class="flex flex-col justify-center items-center w-screen text-center mt-5 px-4">
+    <div class="w-full max-w-lg mb-1">
+        <form method="post" class="flex items-center space-x-2">
+            <input type="text" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="username" name="username" placeholder="Username"/>
+            <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">
+                Search
+            </button>
+        </form>
+    </div>
+        <div class="mx-auto mt-3">
+      <table class="border border-black table-auto">
+      <thead>
+        <td class="text-start py-2 text-xl">Total: { fmt.Sprintf("%v", len(profiles)) }</td>
+        <tr>
+        <th class="border border-black px-4 py-2">Username</th>
+        <th class="border border-black px-4 py-2">Email</th>
+        <th class="border border-black px-4 py-2">Active</th>
+        <th class="border border-black px-4 py-2">Staff</th>
+        <th class="border border-black px-4 py-2">Admin</th>
+        <th class="border border-black px-4 py-2">Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+      for _, profile := range profiles {
+        <tr>
+          <td class="border border-black px-4 py-2"><a href={ templ.SafeURL(fmt.Sprintf("/profile/%s", profile["user_id"].(string))) }>{ profile["username"].(string) }</a></td>
+          <td class="border border-black px-4 py-2">{ profile["email"].(string) }</td>
+          if profile["is_active"].(bool) {
+            if current_profile["user_id"].(string) != profile["user_id"].(string) {
+              <td class="border border-black px-4 py-2">
+                <form method="post" action={ templ.SafeURL(fmt.Sprintf("/profile-list?user=%s", profile["user_id"].(string))) } class="flex items-center space-x-2">
+                <p class="me-1">{ strconv.FormatBool( profile["is_active"].(bool) ) }</p>
+                <input type="hidden" id="is_active" name="is_active" value={ strconv.FormatBool( !profile["is_active"].(bool) )}>
+                <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">Change</button>
+                </form>
+              </td>
+            } else {
+              <td class="border border-black px-4 py-2">{ strconv.FormatBool( profile["is_active"].(bool) ) }</td>
+            }
+          } else {
+            if current_profile["user_id"].(string) != profile["user_id"].(string) {
+              <td class="border border-black px-4 py-2">
+                <form method="post" action={ templ.SafeURL(fmt.Sprintf("/profile-list?user=%s", profile["user_id"].(string))) } class="flex items-center space-x-2">
+                <p class="me-1">{ strconv.FormatBool( profile["is_active"].(bool) ) }</p>
+                <input type="hidden" id="is_active" name="is_active" value={ strconv.FormatBool( !profile["is_active"].(bool) )}>
+                <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">Change</button>
+              </form>
+              </td>
+            } else {
+              <td class="border border-black px-4 py-2">{ strconv.FormatBool( profile["is_active"].(bool) ) }</td>
+            }
+          }
+
+          if profile["is_staff"].(bool) {
+            if current_profile["user_id"].(string) != profile["user_id"].(string) {
+              <td class="border border-black px-4 py-2">
+                <form method="post" action={ templ.SafeURL(fmt.Sprintf("/profile-list?user=%s", profile["user_id"].(string))) } class="flex items-center space-x-2">
+                <p class="me-1">
+                { strconv.FormatBool( profile["is_staff"].(bool) ) } </p>
+                <input type="hidden" id="is_staff" name="is_staff" value={ strconv.FormatBool( !profile["is_staff"].(bool) )}>
+                <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">Change</button>
+              </form>
+              </td>
+            } else {
+              <td class="border border-black px-4 py-2">{ strconv.FormatBool( profile["is_staff"].(bool) ) }</td>
+            }
+          } else {
+            if current_profile["user_id"].(string) != profile["user_id"].(string) {
+              <td class="border border-black px-4 py-2">
+                <form method="post" action={ templ.SafeURL(fmt.Sprintf("/profile-list?user=%s", profile["user_id"].(string))) } class="flex items-center space-x-2">
+                <p class="me-1">
+                { strconv.FormatBool( profile["is_staff"].(bool) ) }</p>
+                <input type="hidden" id="is_staff" name="is_staff" value={ strconv.FormatBool( !profile["is_staff"].(bool) )}>
+                <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">Change</button>
+              </form>
+              </td>
+            } else {
+              <td class="border border-black px-4 py-2">{ strconv.FormatBool( profile["is_staff"].(bool) ) }</td>
+            }
+          }
+          <td class="border border-black px-4 py-2">{ strconv.FormatBool( profile["is_admin"].(bool) ) }</td>
+          <td class="border border-black px-4 py-2">{ profile["created_at"].(string) }</td>
+        </tr>
+      }
+      </tbody>
+    </table>
+    </div>
+        <canvas id="userChart" chart-data={ templ.JSONString(ChartData(profiles)) } class="rounded-md border border-black p-6 m-6 h-48"></canvas>
+  </div>
+  <script>
+         const ctx = document.getElementById('userChart');
+        const user = JSON.parse(ctx.getAttribute('chart-data'));
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Jan', 'Feb', 'March', 'April', 'May', 'June', 'July', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      datasets: [{
+        label: '2025',
+        data: [user["January"], user["February"], user["March"], user["April"], user["May"], user["June"], user["July"], user["August"], user["September"], user["October"], user["November"], user["December"]],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+  </script>
+}
+
+templ ChangeEmailRequest(alert map[string]string) {
+   <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Change Email?
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your old email address
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+        if alert != nil {
+            if alert["email"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["email"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="email">Email </label>
+          <input type="email" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="email" name="email" placeholder="Email" required/>
+          </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+        <br/>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ChangeEmailSent() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Check Your Email!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>An Email with a link to change email address has been sent to your inbox.</p>
+        <p>If email is not present in the inbox, check your spam folder.</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ ChangeEmail(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Change Email
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your new email address
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+        if alert != nil {
+            if alert["email"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["email"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="email">Email </label>
+          <input type="email" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="email" name="email" placeholder="Email" required/>
+          </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+        <br/>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ChangePasswordRequest() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Change Password?
+      </div>
+      
+      <div class="text-sm text-gray-600 text-center">
+        Are you sure? Once the process starts your user account will be logged out							 
+      </div></div>
+
+      <form method="post">
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ChangePasswordEmailSent() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Check Your Email!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>An Email with a link to change password has been sent to your inbox.</p>
+        <p>If email is not present in the inbox, check your spam folder.</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ SuccessChangePassword() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Success!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>Password has been changed you can now <a href="/login">Login</a></p>
+      </div>
+    </div>
+  </div>
+}
+
+templ ChangePassword(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Change Password
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your old and new password
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+        if alert != nil {
+            if alert["password"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["password"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="old-password">Old Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="old-password" name="old-password" placeholder="Old Password" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="new-password">New Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="new-password" name="new-password" placeholder="New Password" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="confirm-password">Confirm Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required/>
+          <br/>
+        </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+       </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ResetPasswordRequest() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Reset Password?
+      </div>
+      
+      <div class="text-sm text-gray-600 text-center">
+        Are you sure? Once the process starts your user account will be logged out							 
+      </div></div>
+
+      <form method="post">
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ ResetPasswordEmailSent() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Check Your Email!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>An Email with a link to reset password has been sent to your inbox.</p>
+        <p>If email is not present in the inbox, check your spam folder.</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ SuccessResetPassword() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Success!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>Password has been reset you can now <a href="/login">Login</a></p>
+      </div>
+    </div>
+  </div>
+}
+
+templ ResetPassword(alert map[string]string) {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Reset Password
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        Type in your new password
+      </div></div>
+
+      <form method="post">
+        <div class="p-6 pt-0">
+        if alert != nil {
+            if alert["password"] != "" {
+              <p class="text-red-600 text-center mb-2">{ alert["password"] }</p>
+            }
+          }
+          <label class="text-sm font-medium mb-2 leading-none" for="new-password">New Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="new-password" name="new-password" placeholder="New Password" required/>
+          <br/>
+          <label class="text-sm font-medium mb-2 leading-none" for="confirm-password">Confirm Password</label>
+          <input type="password" class="flex h-10 w-full rounded-md border border-black dark:border-white py-2 px-3 text-base" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required/>
+          <br/>
+        </div>
+      
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+       </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ DeleteUserRequest() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Delete Account?
+      </div>
+      
+      <div class="text-sm text-gray-600 text-center">
+        Are you sure? Your user account will be deleted together with all of it's associated data.
+      </div></div>
+
+      <form method="post">
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+      </div>
+      </form>
+    </div>
+  </div>
+}
+
+templ DeleteUserEmailSent() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Check Your Email!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>An Email with a link to delete your user account has been sent to your inbox.</p>
+        <p>If email is not present in the inbox, check your spam folder.</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ SuccessDeleteUser() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Success!
+      </div>
+      </div>
+      <div class="p-6 pt-0 text-center">
+        <p>User account has been deleted</p>
+      </div>
+    </div>
+  </div>
+}
+
+templ DeleteUser() {
+  <div class="flex flex-col items-center justify-center h-screen">
+    <div class="rounded-lg border border-black dark:border-white shadow-sm w-96">
+      <div class="flex flex-col space-y-1.5 p-6">
+      <div class="text-4xl font-semibold leading-none tracking-tight text-center py-2">
+        Delete Account
+      </div>
+      
+      <div class="text-sm text-gray-600">
+        The action you are about to do will delete your user account and all the data associated with the account
+      </div></div>
+
+      <form method="post">
+      <div class="flex flex-col items-center justify-center p-6 pt-0">
+        <button type="submit" class="rounded-md h-10 px-4 py-2 bg-black dark:border-white text-white dark:text-black hover:bg-gray-800">submit</button>
+       </div>
+      </form>
+    </div>
+  </div>
+}
