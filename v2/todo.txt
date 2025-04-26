@@ -1,0 +1,7 @@
+27/4/2025
+- auth.users
+-- create sql function for insert (create)
+-- create sql function for select single instance (read)
+-- create sql function for select all instances with pagination (read)
+-- create sql function for update single instance (update)
+-- create sql function for delete single instance (delete)
