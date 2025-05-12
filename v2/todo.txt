@@ -2,6 +2,6 @@
 - auth.users
 -- create sql function for insert (create) 28/4/2025
 -- create sql function for select single instance (read) 28/4/2025
--- create sql function for select all instances with pagination (read)
+-- create sql function for select all instances with pagination (read) 12/5/2025
 -- create sql function for update single instance (update)
 -- create sql function for delete single instance (delete)
