@@ -8,8 +8,8 @@
 
 12/5/2025
 - auth.users
--- alter user_update_functions to limit 1
--- alter user delete function to limit 1
+-- alter user_update_functions to limit 1 (n/a)
+-- alter user delete function to limit 1 (n/a)
 -- create sql function for update many instances (update) 
 -- create sql function for delete many instances (delete)
 -- create sql trigger function to add a timestamp for update query (update) 
